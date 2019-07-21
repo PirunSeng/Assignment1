@@ -10,7 +10,9 @@ public class TCPFileTransferServer {
     String data = null;
     String reqMethod;
     String reqFile;
-    // String fileFromServer;
+    String prefixFileName = "from-client-";
+    String savedfilename;
+
 		try{
 			server = new ServerSocket(9999);
 			
@@ -23,6 +25,7 @@ public class TCPFileTransferServer {
         while ( (data = in.readLine()) != null ) {
           reqMethod = data.split(" ")[0];
           reqFile   = data.split(" ")[1];
+          savedfilename = prefixFileName + reqFile;
           if(reqMethod.equals("get")) {
             System.out.println("\r\nRequest method: " + reqMethod);
             System.out.println("Request filename: " + reqFile);
@@ -53,10 +56,33 @@ public class TCPFileTransferServer {
               inFile.close();
               System.out.println("Sending completed!");
             }
+          } else if (reqMethod.equals("put")) {
+            System.out.println("Request is put");
+            long filesize = Long.parseLong(in.readLine());
+            System.out.println("File size = " + filesize + " bytes");
+            out = new PrintWriter(socket.getOutputStream(), true);
+            out.println("OK");
+
+            System.out.println("Start receiving " + reqFile + " from client and renamed it to " + prefixFileName + reqFile);
+            FileOutputStream outFile = new FileOutputStream(savedfilename);
+            // long filesize = Long.parseLong(in.readLine());
+            try{
+              InputStream inSocket = socket.getInputStream();
+              int b; long l=0;
+              byte[] buf = new byte[1024];
+              while((b = inSocket.read(buf, 0, 1024)) != -1){
+                l += b;
+                outFile.write(buf, 0, b);
+                if(l == filesize) break;
+              }
+              System.out.println("Receiving completed!");
+              System.out.println("-------------------------");
+            }catch(SocketTimeoutException ste){
+              System.out.println("[Error] Receiving timeout!!!!");
+            }finally{
+              outFile.close();
+            }
           }
-          // else if (reqMethod.equals("put")) {
-            
-          // }
         }
 				// out = new PrintWriter(socket.getOutputStream(), true);
 				

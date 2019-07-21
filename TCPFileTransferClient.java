@@ -19,7 +19,7 @@ public class TCPFileTransferClient {
 		PrintWriter out = null;
 		BufferedReader response = null;
 		String request;
-    String prefixFileName = "test-";
+    String prefixFileName = "from-server-";
 		
 		try{
 			socket = new Socket(ip, PORT);
@@ -68,9 +68,36 @@ public class TCPFileTransferClient {
               outFile.close();
             }
           }
-          // else if (reqMethod.equals("put")) {
-            
-          // }
+          else if (reqMethod.equals("put")) {
+            // out.println(request);
+            // check if file exist
+            File file = new File(filename);
+            long filesize = file.length();
+            if(!file.exists()){
+              System.out.println("File does not exists on client");
+              // out.println("-1"); //File not exist
+              continue;
+            }else{
+              // send request to server only if file exists
+              out.println(request);
+              System.out.println("File size on client = " + filesize + " bytes");
+              out.println(""+filesize);
+            }
+            // if server say OK
+            if(response.readLine().equals("OK")){
+              System.out.println("Sending " + filename + " ...");
+              OutputStream outSocket = socket.getOutputStream();
+              FileInputStream inFile = new FileInputStream(filename);
+              byte[] buf = new byte[1024];
+              int b; long l = 0;
+              while((b=inFile.read(buf, 0, 1024)) != -1){
+                l += b;
+                outSocket.write(buf, 0, b);
+              }
+              inFile.close();
+              System.out.println("Sending completed!");
+            }
+          }
         }
       }
 			//Send requested filename to server
