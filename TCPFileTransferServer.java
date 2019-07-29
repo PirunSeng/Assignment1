@@ -3,15 +3,13 @@ import java.net.*;
 
 public class TCPFileTransferServer {
 	public static void main(String[] args){
-		ServerSocket server = null;
-		Socket socket = null;
-		BufferedReader in = null;
-		PrintWriter out = null;
-    String data = null;
-    String reqMethod;
-    String reqFile;
-    String prefixFileName = "from-client-";
-    String savedfilename;
+		ServerSocket server     = null;
+		Socket socket           = null;
+		BufferedReader response = null;
+		PrintWriter writeOut    = null;
+    String data             = null;
+    String prefixFileName   = "from-client-";
+    String reqMethod, reqFile, savedfilename;
 
 		try{
 			server = new ServerSocket(9999);
@@ -21,51 +19,49 @@ public class TCPFileTransferServer {
 				System.out.println("Wait for client to connect....");
 				socket = server.accept();
 				System.out.println("Got connection from " + socket.getInetAddress());
-				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        while ( (data = in.readLine()) != null ) {
+				response = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        while ( (data = response.readLine()) != null ) {
           reqMethod = data.split(" ")[0];
           reqFile   = data.split(" ")[1];
           savedfilename = prefixFileName + reqFile;
           if(reqMethod.equals("get")) {
-            System.out.println("\r\nRequest method: " + reqMethod);
-            System.out.println("Request filename: " + reqFile);
-
-            out = new PrintWriter(socket.getOutputStream(), true);
-            // String reqFile = in.readLine();
+            writeOut = new PrintWriter(socket.getOutputStream(), true);
             File file = new File(reqFile);
             long filesize = file.length();
             if(!file.exists()){
               System.out.println("File does not exists on server");
-              out.println("-1"); //File not exist
+				      System.out.println("-------------------------");
+              writeOut.println("-1"); //File not exist
               continue;
             }else{
               System.out.println("File size = " + filesize + " bytes");
-              out.println(""+filesize);
+              writeOut.println(""+filesize);
             }
             // send file to client
-            if(in.readLine().equals("OK")){
+            if(response.readLine().equals("OK")){
               System.out.println("Sending " + reqFile + " ...");
               OutputStream outSocket = socket.getOutputStream();
               FileInputStream inFile = new FileInputStream(reqFile);
               byte[] buf = new byte[1024];
-              int b; long l = 0;
+              int b;
+              // long l = 0;
               while((b=inFile.read(buf, 0, 1024)) != -1){
-                l += b;
+                // l += b;
                 outSocket.write(buf, 0, b);
               }
               inFile.close();
               System.out.println("Sending completed!");
+				      System.out.println("-------------------------");
             }
           } else if (reqMethod.equals("put")) {
             System.out.println("Request is put");
-            long filesize = Long.parseLong(in.readLine());
+            long filesize = Long.parseLong(response.readLine());
             System.out.println("File size = " + filesize + " bytes");
-            out = new PrintWriter(socket.getOutputStream(), true);
-            out.println("OK");
+            writeOut = new PrintWriter(socket.getOutputStream(), true);
+            writeOut.println("OK");
 
             System.out.println("Start receiving " + reqFile + " from client and renamed it to " + prefixFileName + reqFile);
             FileOutputStream outFile = new FileOutputStream(savedfilename);
-            // long filesize = Long.parseLong(in.readLine());
             try{
               InputStream inSocket = socket.getInputStream();
               int b; long l=0;
@@ -84,33 +80,6 @@ public class TCPFileTransferServer {
             }
           }
         }
-				// out = new PrintWriter(socket.getOutputStream(), true);
-				
-				// String filename = in.readLine();
-				// File file = new File(filename);
-				// long filesize = file.length();
-				// if(!file.exists()){
-				// 	System.out.println("File does not exists on server");
-				// 	out.println("-1"); //File not exist
-				// 	continue;
-				// }else{
-				// 	System.out.println("File size = " + filesize + " bytes");
-				// 	out.println(""+filesize);
-				// }
-
-				// if(in.readLine().equals("OK")){
-				// 	System.out.println("Sending " + filename + " ...");
-				// 	OutputStream outSocket = socket.getOutputStream();
-				// 	FileInputStream inFile = new FileInputStream(filename);
-				// 	byte[] buf = new byte[1024];
-				// 	int b; long l = 0;
-				// 	while((b=inFile.read(buf, 0, 1024)) != -1){
-				// 		l += b;
-				// 		outSocket.write(buf, 0, b);
-				// 	}
-				// 	inFile.close();
-				// 	System.out.println("Sending completed!");
-				// }
 			}
 			
 		}catch(IOException ioe){
